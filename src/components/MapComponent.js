@@ -24,6 +24,10 @@ export default function MapComponent() {
   const [chestLootOpen, setChestLootOpen] = useState(false);
   const [lootItem, setLootItem] = useState(null);
   
+  // Kingdom Members State
+  const [kingdomMembers, setKingdomMembers] = useState([]);
+  const [isFetchingMembers, setIsFetchingMembers] = useState(false);
+  
   // Chest Opening Animation State
   const [chestOpeningOpen, setChestOpeningOpen] = useState(false);
   const [chestOpeningEmoji, setChestOpeningEmoji] = useState('🎁');
@@ -362,6 +366,8 @@ export default function MapComponent() {
       updateMarketItemNames();
     } else if (sidebarTab === 'shop' || sidebarTab === 'inventory') {
       loadChestRates();
+    } else if (sidebarTab === 'kingdom') {
+      fetchKingdomMembers();
     }
   }, [sidebarTab]);
 
@@ -437,6 +443,50 @@ export default function MapComponent() {
         }
       })
       .catch(e => console.error("Error loading chest rates", e));
+  };
+
+  // Kingdom Handlers
+  const fetchKingdomMembers = async () => {
+    if (!player || !player.id || !player.kingdom_id) return;
+    setIsFetchingMembers(true);
+    try {
+      const res = await fetch(`/api/game/kingdoms/${player.kingdom_id}/members?playerId=${player.id}&t=` + Date.now());
+      const data = await res.json();
+      if (data.status === 'success') {
+        setKingdomMembers(data.data);
+      } else {
+        setKingdomMembers([]);
+      }
+    } catch (e) {
+      console.error(e);
+      setKingdomMembers([]);
+    } finally {
+      setIsFetchingMembers(false);
+    }
+  };
+
+  const handleUpdateRole = async (targetPlayerId, newRole) => {
+    if (!player || player.role !== 'KING') return;
+    try {
+      const res = await fetch('/api/game/kingdoms/members/role', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requesterId: player.id,
+          targetPlayerId,
+          newRole
+        })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        alert(data.message);
+        fetchKingdomMembers();
+      } else {
+        alert(data.message);
+      }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleRateChange = (rarity, val) => {
