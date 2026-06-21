@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { User, Zap, Backpack, TrendingUp, Swords, Map as MapIcon, LogOut, Info, Users } from 'lucide-react';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 
 // Import RPG components
 import ProfileTab from './rpg/ProfileTab';
@@ -107,9 +107,9 @@ export default function Sidebar({
             </div>
             <div className="flex flex-col gap-1">
               <span className="font-bold text-sm text-foreground">Tamu</span>
-              <Button asChild size="sm" variant="default" className="h-6 text-[10px] px-3">
-                <Link href="/login">Masuk / Login</Link>
-              </Button>
+              <Link href="/login" className={buttonVariants({ variant: "default", size: "sm", className: "h-6 text-[10px] px-3" })}>
+                Masuk / Login
+              </Link>
             </div>
           </div>
         )}
