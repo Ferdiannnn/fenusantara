@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import L from 'leaflet';
 
 import Sidebar from './Sidebar';
-import RPGModal from './RPGModal';
 import ChestLootModal from './overlays/ChestLootModal';
 import ChestOpeningOverlay from './overlays/ChestOpeningOverlay';
 
@@ -17,8 +16,7 @@ export default function MapComponent() {
   // Game States
   const [player, setPlayer] = useState(null);
   const [selectedTerritory, setSelectedTerritory] = useState(null);
-  const [rpgModalOpen, setRpgModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('tab-skills');
+  const [sidebarTab, setSidebarTab] = useState('profile');
   const [tick, setTick] = useState(0);
   const [battleLogs, setBattleLogs] = useState([]);
   
@@ -231,7 +229,19 @@ export default function MapComponent() {
       code,
       currentTData: territoriesDbRef.current[code]
     });
+    setSidebarTab('detail'); // Auto open selected territory dossier
   }, []);
+
+  // Center/focus on a selected territory from battles menu click
+  const focusTerritory = useCallback((code) => {
+    if (!geojsonLayerRef.current) return;
+    geojsonLayerRef.current.eachLayer((layer) => {
+      const layerCode = layer.feature.properties.GID_3 || layer.feature.properties.GID_2 || layer.feature.properties.GID_1;
+      if (layerCode === code) {
+        handleFeatureClick(layer.feature, layer);
+      }
+    });
+  }, [handleFeatureClick]);
 
   // Set up mouse events on GeoJSON feature loading
   const onEachFeature = useCallback((feature, layer) => {
@@ -345,15 +355,15 @@ export default function MapComponent() {
     };
   }, [loadMapData, fetchTerritories, refreshPlayerStats]);
 
-  // Tab-specific initializations
+  // Tab-specific initializations inside sidebar
   useEffect(() => {
-    if (activeTab === 'tab-market') {
+    if (sidebarTab === 'market') {
       loadMarketData();
       updateMarketItemNames();
-    } else if (activeTab === 'tab-shop') {
+    } else if (sidebarTab === 'shop' || sidebarTab === 'inventory') {
       loadChestRates();
     }
-  }, [activeTab]);
+  }, [sidebarTab]);
 
   // Load active orders and templates
   const loadMarketTemplates = async () => {
@@ -930,7 +940,7 @@ export default function MapComponent() {
       {/* Map Division */}
       <div id="map" style={{ width: '100%', height: '100vh' }}></div>
 
-      {/* Modular Sidebar Component */}
+      {/* Modular Sidebar Component with integrated menus */}
       <Sidebar 
         player={player}
         selectedTerritory={selectedTerritory}
@@ -939,30 +949,35 @@ export default function MapComponent() {
         handleBattleAction={handleBattleAction}
         handleHarvest={handleHarvest}
         battleLogs={battleLogs}
-      />
+        
+        // Navigation States
+        sidebarTab={sidebarTab}
+        setSidebarTab={setSidebarTab}
+        
+        // Active battles listing helpers
+        territories={Object.values(territoriesDbRef.current)}
+        focusTerritory={focusTerritory}
 
-      {/* Modular RPG Dashboard Modal */}
-      <RPGModal 
-        open={rpgModalOpen}
-        onClose={() => setRpgModalOpen(false)}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        player={player}
-        handleUpgradeSkill={handleUpgradeSkill}
+        // RPG Tab stats and handlers
         equippedAtk={equippedAtk}
         equippedDef={equippedDef}
         equippedAgi={equippedAgi}
         equippedCrit={equippedCrit}
         equippedSummary={equippedSummary}
+        handleUpgradeSkill={handleUpgradeSkill}
         handleEquipItem={handleEquipItem}
         handleUnequipItem={handleUnequipItem}
         handleSellItem={handleSellItem}
+        
+        // Shop Tab handlers
         chestRates={chestRates}
         ratesSum={ratesSum}
         handleOpenChest={handleOpenChest}
         handleBuyShopItem={handleBuyShopItem}
         handleRateChange={handleRateChange}
         submitChestRates={submitChestRates}
+
+        // Market Tab states & handlers
         marketBuyType={marketBuyType}
         setMarketBuyType={setMarketBuyType}
         marketBuyRarity={marketBuyRarity}
@@ -976,6 +991,8 @@ export default function MapComponent() {
         myOrders={myOrders}
         handlePlaceBuyOrder={handlePlaceBuyOrder}
         handleCancelOrder={handleCancelOrder}
+
+        // Crafting Tab recipes & handlers
         recipes={recipes}
         handleCraftItem={handleCraftItem}
       />
