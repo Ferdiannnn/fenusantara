@@ -47,6 +47,13 @@ export default function ProfileTab({
   const [staminaInterval, setStaminaInterval] = useState(1);
   const [energyInterval, setEnergyInterval] = useState(1);
 
+  // Password change state
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [pwdLoading, setPwdLoading] = useState(false);
+  const [pwdMessage, setPwdMessage] = useState(null);
+
   useEffect(() => {
     const tick = () => {
       const sc = calcRegenCountdown(player.last_stamina_regen, player.def_level);
@@ -80,6 +87,43 @@ export default function ProfileTab({
     { type: 'HELMET', label: '🪖 Pelindung Kepala', icon: '🪖' },
     { type: 'BOOTS', label: '🥾 Sepatu Bot', icon: '🥾' }
   ];
+
+  const handleChangePassword = async () => {
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      setPwdMessage({ type: 'error', text: 'Semua kolom sandi harus diisi!' });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPwdMessage({ type: 'error', text: 'Konfirmasi sandi baru tidak cocok!' });
+      return;
+    }
+    setPwdLoading(true);
+    setPwdMessage(null);
+    try {
+      const res = await fetch('/api/game/change_password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          player_id: player.id,
+          old_password: oldPassword,
+          new_password: newPassword
+        })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        setPwdMessage({ type: 'success', text: data.message || 'Kata sandi berhasil diubah!' });
+        setOldPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        setPwdMessage({ type: 'error', text: data.message || 'Gagal mengubah sandi' });
+      }
+    } catch (err) {
+      setPwdMessage({ type: 'error', text: 'Terjadi kesalahan jaringan' });
+    } finally {
+      setPwdLoading(false);
+    }
+  };
 
   return (
     <div className="tab-pane active-pane">
@@ -257,6 +301,26 @@ export default function ProfileTab({
             </div>
           );
         })}
+      </div>
+
+      {/* change password */}
+      <div style={{ marginTop: '20px', padding: '14px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+        <h4 style={{ margin: '0 0 12px 0', fontSize: '0.8rem', color: '#a5b4fc', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span>🔐</span> Ubah Kata Sandi
+        </h4>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {pwdMessage && (
+            <div style={{ padding: '8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '500', background: pwdMessage.type === 'error' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)', color: pwdMessage.type === 'error' ? '#fca5a5' : '#6ee7b7', border: `1px solid ${pwdMessage.type === 'error' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.3)'}` }}>
+              {pwdMessage.text}
+            </div>
+          )}
+          <input type="password" value={oldPassword} onChange={e => setOldPassword(e.target.value)} placeholder="Kata Sandi Lama" style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)', background: 'rgba(15, 15, 20, 0.6)', color: '#f8fafc', outline: 'none', fontSize: '0.85rem' }} />
+          <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Kata Sandi Baru" style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)', background: 'rgba(15, 15, 20, 0.6)', color: '#f8fafc', outline: 'none', fontSize: '0.85rem' }} />
+          <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Konfirmasi Kata Sandi Baru" style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)', background: 'rgba(15, 15, 20, 0.6)', color: '#f8fafc', outline: 'none', fontSize: '0.85rem' }} />
+          <button onClick={handleChangePassword} disabled={pwdLoading} style={{ padding: '10px', borderRadius: '8px', background: pwdLoading ? 'rgba(99, 102, 241, 0.5)' : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', color: '#fff', fontWeight: 'bold', cursor: pwdLoading ? 'not-allowed' : 'pointer', border: 'none', marginTop: '4px', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)' }}>
+            {pwdLoading ? 'Menyimpan...' : 'Simpan Perubahan'}
+          </button>
+        </div>
       </div>
     </div>
   );
