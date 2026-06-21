@@ -1,4 +1,21 @@
 'use client';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
+
+const RARITY_COLOR = { COMMON: 'text-slate-400', RARE: 'text-blue-400', EPIC: 'text-purple-400', LEGENDARY: 'text-amber-400' };
+const RARITY_BADGE = { COMMON: 'common', RARE: 'rare', EPIC: 'epic', LEGENDARY: 'legendary' };
+
+const SHOP_ITEMS = [
+  { key: 'wood_sword',       name: 'Pedang Kayu',       stats: 'ATK +2',    cost: 30, statColor: 'text-red-400' },
+  { key: 'wood_shield',      name: 'Perisai Kayu',      stats: 'DEF +1',    cost: 30, statColor: 'text-blue-400' },
+  { key: 'leather_boots',    name: 'Sepatu Kulit',      stats: 'AGI +2%',   cost: 30, statColor: 'text-emerald-400' },
+  { key: 'leather_helmet',   name: 'Helm Kulit',        stats: 'DEF +1',    cost: 30, statColor: 'text-blue-400' },
+  { key: 'cloth_gloves',     name: 'Sarung Tangan Kain',stats: 'CRIT +2%',  cost: 30, statColor: 'text-purple-400' },
+  { key: 'leather_leggings', name: 'Celana Kulit',      stats: 'DEF +1',    cost: 30, statColor: 'text-blue-400' }
+];
 
 export default function ShopTab({
   player,
@@ -10,58 +27,74 @@ export default function ShopTab({
   submitChestRates
 }) {
   return (
-    <div className="tab-pane active-pane">
-      <div className="loot-chest-container">
-        <h4 style={{ margin: '0 0 5px 0', color: '#facc15' }}>Loot Chest Acak (Sangat Menarik!)</h4>
-        <p style={{ fontSize: '0.75rem', color: '#ddd', margin: '0 0 10px 0' }}>Dapatkan perlengkapan acak Common s/d Legendary!</p>
-        <button className="btn-chest" onClick={handleOpenChest}>Buka Chest (50 Gold)</button>
-      </div>
+    <div className="tab-pane active-pane flex flex-col gap-3">
 
-      {/* Chest Probability Rates Editor (Player ID 1 Only) */}
-      {player.id === 1 && (
-        <div className="chest-rates-editor-panel" style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255,255,255,0.06)', padding: '12px 16px', borderRadius: '12px', marginBottom: '15px' }}>
-          <h5 style={{ margin: '0 0 10px 0', color: '#fbbf24', fontSize: '0.8rem', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>⚙️ Atur Probabilitas Chest</h5>
-          <form onSubmit={submitChestRates} style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
-            {['COMMON', 'RARE', 'EPIC', 'LEGENDARY'].map(r => (
-              <div key={r}>
-                <label style={{ fontSize: '0.65rem', color: r === 'COMMON' ? '#94a3b8' : (r === 'RARE' ? '#3b82f6' : (r === 'EPIC' ? '#a855f7' : '#f59e0b')), fontWeight: 'bold', display: 'block', marginBottom: '3px' }}>{r} (%)</label>
-                <input 
-                  type="number" 
-                  min="0" 
-                  max="100" 
-                  required 
-                  value={chestRates[r]}
-                  onChange={(e) => handleRateChange(r, e.target.value)}
-                  style={{ padding: '6px 10px', fontSize: '0.8rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', color: 'white', width: '100%', boxSizing: 'border-box', outline: 'none' }}
-                />
-              </div>
+      {/* Loot Chest Card */}
+      <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-red-500/10">
+        <CardContent className="p-4 text-center">
+          <div className="text-3xl mb-2">🎁</div>
+          <h4 className="text-amber-400 font-black text-sm mb-1">Loot Chest Acak</h4>
+          <p className="text-xs text-muted-foreground mb-3">Dapatkan perlengkapan Common s/d Legendary!</p>
+          <div className="flex gap-2 justify-center text-xs mb-3">
+            {Object.entries(chestRates || {}).map(([r, v]) => (
+              <Badge key={r} variant={RARITY_BADGE[r] || 'outline'} className="text-[10px]">
+                {r}: {v}%
+              </Badge>
             ))}
-            <div style={{ gridColumn: 'span 2', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: ratesSum === 100 ? '#10b981' : '#ef4444' }}>Total: {ratesSum}%</span>
-              <button type="submit" className="btn-buy" style={{ padding: '6px 14px', fontSize: '0.75rem', borderRadius: '6px' }}>Simpan Probabilitas</button>
-            </div>
-          </form>
-        </div>
+          </div>
+          <Button variant="warning" className="font-black text-xs px-6 animate-pulse" onClick={handleOpenChest}>
+            🎲 Buka Chest (50 Gold)
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Admin Rate Editor */}
+      {player.id === 1 && (
+        <Card className="border-amber-500/20">
+          <CardContent className="p-3">
+            <h5 className="text-amber-400 text-xs font-black uppercase tracking-wide mb-3">⚙️ Atur Probabilitas Chest</h5>
+            <form onSubmit={submitChestRates} className="grid grid-cols-2 gap-2">
+              {['COMMON', 'RARE', 'EPIC', 'LEGENDARY'].map(r => (
+                <div key={r}>
+                  <label className={`text-[10px] font-black uppercase tracking-wide block mb-1 ${RARITY_COLOR[r]}`}>{r} (%)</label>
+                  <Input
+                    type="number" min="0" max="100" required
+                    value={chestRates[r]}
+                    onChange={(e) => handleRateChange(r, e.target.value)}
+                    className="h-7 text-xs"
+                  />
+                </div>
+              ))}
+              <div className="col-span-2 flex justify-between items-center pt-2 border-t border-white/5 mt-1">
+                <span className={`text-xs font-bold ${ratesSum === 100 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  Total: {ratesSum}%
+                </span>
+                <Button type="submit" size="sm" variant="default" className="text-xs h-7">
+                  Simpan
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       )}
 
-      <hr style={{ border: 0, borderTop: '1px solid rgba(255,255,255,0.1)', margin: '15px 0' }} />
-      <h4 style={{ margin: '0 0 10px 0' }}>Beli Peralatan Dasar</h4>
-      <div className="shop-grid">
-        {[
-          { key: 'wood_sword', name: 'Pedang Kayu (COMMON)', stats: 'ATK +2', cost: 30, color: '#ef4444' },
-          { key: 'wood_shield', name: 'Perisai Kayu (COMMON)', stats: 'DEF +1', cost: 30, color: '#3b82f6' },
-          { key: 'leather_boots', name: 'Sepatu Kulit (COMMON)', stats: 'AGI +2%', cost: 30, color: '#10b981' },
-          { key: 'leather_helmet', name: 'Helm Kulit (COMMON)', stats: 'DEF +1', cost: 30, color: '#3b82f6' },
-          { key: 'cloth_gloves', name: 'Sarung Tangan Kain (COMMON)', stats: 'CRIT +2%', cost: 30, color: '#a855f7' },
-          { key: 'leather_leggings', name: 'Celana Kulit (COMMON)', stats: 'DEF +1', cost: 30, color: '#3b82f6' }
-        ].map(item => (
-          <div className="shop-item" key={item.key}>
-            <div>
-              <strong>{item.name}</strong>
-              <div style={{ color: item.color, fontSize: '0.8rem' }}>{item.stats}</div>
-            </div>
-            <button className="btn-buy" onClick={() => handleBuyShopItem(item.key)}>Beli ({item.cost} G)</button>
-          </div>
+      <Separator className="bg-white/5" />
+      <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest px-1">Beli Peralatan Dasar</h4>
+
+      {/* Shop Grid */}
+      <div className="flex flex-col gap-2 max-h-[200px] overflow-y-auto pr-1">
+        {SHOP_ITEMS.map(item => (
+          <Card key={item.key} className="border-white/5 hover:border-indigo-500/20 transition-colors">
+            <CardContent className="p-3 flex items-center justify-between">
+              <div>
+                <div className="text-sm font-bold text-foreground">{item.name}</div>
+                <div className={`text-xs font-semibold ${item.statColor}`}>{item.stats} · COMMON</div>
+              </div>
+              <Button size="sm" variant="default" className="text-xs px-3 h-7" onClick={() => handleBuyShopItem(item.key)}>
+                {item.cost} G
+              </Button>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>

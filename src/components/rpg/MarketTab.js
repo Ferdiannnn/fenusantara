@@ -1,14 +1,18 @@
 'use client';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+
+const RARITY_BADGE = { COMMON: 'common', RARE: 'rare', EPIC: 'epic', LEGENDARY: 'legendary' };
 
 export default function MarketTab({
-  marketBuyType,
-  setMarketBuyType,
-  marketBuyRarity,
-  setMarketBuyRarity,
-  marketBuyName,
-  setMarketBuyName,
-  marketBuyPrice,
-  setMarketBuyPrice,
+  marketBuyType, setMarketBuyType,
+  marketBuyRarity, setMarketBuyRarity,
+  marketBuyName, setMarketBuyName,
+  marketBuyPrice, setMarketBuyPrice,
   marketTemplates,
   orderBook,
   myOrders,
@@ -16,143 +20,132 @@ export default function MarketTab({
   handleCancelOrder
 }) {
   return (
-    <div className="tab-pane active-pane">
-      <div style={{ background: 'rgba(10, 10, 15, 0.5)', border: '1px solid rgba(255,255,255,0.04)', padding: '12px', borderRadius: '10px', marginBottom: '12px' }}>
-        <h4 style={{ margin: '0 0 10px 0', color: '#a5b4fc', fontSize: '0.85rem', textTransform: 'uppercase' }}>Pasang Order Beli Baru</h4>
-        <form onSubmit={handlePlaceBuyOrder} style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', alignItems: 'end' }}>
-          <div>
-            <label style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 'bold', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>Tipe Slot</label>
-            <select value={marketBuyType} onChange={(e) => setMarketBuyType(e.target.value)} required style={{ padding: '6px 10px', fontSize: '0.8rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', color: 'white', width: '100%' }}>
-              <option value="WEAPON">⚔️ WEAPON</option>
-              <option value="HELMET">🪖 HELMET</option>
-              <option value="ARMOR">🛡️ ARMOR</option>
-              <option value="ARMS">🧤 ARMS</option>
-              <option value="LEG">👖 LEG</option>
-              <option value="BOOTS">🥾 BOOTS</option>
-            </select>
-          </div>
-          <div>
-            <label style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 'bold', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>Kelangkaan</label>
-            <select value={marketBuyRarity} onChange={(e) => setMarketBuyRarity(e.target.value)} required style={{ padding: '6px 10px', fontSize: '0.8rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', color: 'white', width: '100%' }}>
-              <option value="COMMON">COMMON</option>
-              <option value="RARE">RARE</option>
-              <option value="EPIC">EPIC</option>
-              <option value="LEGENDARY">LEGENDARY</option>
-            </select>
-          </div>
-          <div style={{ gridColumn: 'span 2' }}>
-            <label style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 'bold', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>Nama Peralatan</label>
-            <select value={marketBuyName} onChange={(e) => setMarketBuyName(e.target.value)} required style={{ padding: '6px 10px', fontSize: '0.8rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', color: 'white', width: '100%' }}>
-              {((marketTemplates[marketBuyType] && marketTemplates[marketBuyType][marketBuyRarity]) || []).map(name => (
-                <option key={name} value={name}>{name}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 'bold', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>Harga Beli (Gold)</label>
-            <input 
-              type="number" 
-              min="1" 
-              required 
-              placeholder="Contoh: 50" 
-              value={marketBuyPrice}
-              onChange={(e) => setMarketBuyPrice(e.target.value)}
-              style={{ padding: '6px 10px', fontSize: '0.8rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', color: 'white', width: '100%', boxSizing: 'border-box', outline: 'none' }}
-            />
-          </div>
-          <div>
-            <button type="submit" className="btn-upgrade" style={{ width: '100%', padding: '8px 10px' }}>Beli Saham/Item</button>
-          </div>
-        </form>
-      </div>
+    <div className="tab-pane active-pane flex flex-col gap-3">
 
-      {/* Active orders */}
-      <div style={{ background: 'rgba(10, 10, 15, 0.5)', border: '1px solid rgba(255,255,255,0.04)', padding: '12px', borderRadius: '10px', marginBottom: '12px' }}>
-        <h4 style={{ margin: '0 0 8px 0', color: '#a5b4fc', fontSize: '0.85rem', textTransform: 'uppercase' }}>Buku Order Aktif (Order Book)</h4>
-        <div style={{ maxHeight: '140px', overflowY: 'auto', fontSize: '0.75rem', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)', color: '#94a3b8', fontWeight: 'bold' }}>
-                <th style={{ padding: '6px 8px' }}>Item</th>
-                <th style={{ padding: '6px 8px' }}>Kelangkaan</th>
-                <th style={{ padding: '6px 8px', textAlign: 'center' }}>Tipe</th>
-                <th style={{ padding: '6px 8px', textAlign: 'right' }}>Antrean</th>
-                <th style={{ padding: '6px 8px', textAlign: 'right' }}>Harga</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orderBook.length > 0 ? (
-                orderBook.map((o, idx) => {
-                  const isBuy = o.order_type === 'BUY';
-                  let rarityColor = '#fff';
-                  if (o.rarity === 'RARE') rarityColor = '#3b82f6';
-                  else if (o.rarity === 'EPIC') rarityColor = '#a855f7';
-                  else if (o.rarity === 'LEGENDARY') rarityColor = '#f59e0b';
+      {/* Buy Order Form */}
+      <Card className="border-white/5">
+        <CardContent className="p-3">
+          <h4 className="text-xs font-black text-indigo-300/80 uppercase tracking-widest mb-3">
+            📋 Pasang Order Beli Baru
+          </h4>
+          <form onSubmit={handlePlaceBuyOrder} className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[10px] text-muted-foreground font-black uppercase tracking-wide block mb-1">Tipe Slot</label>
+              <Select value={marketBuyType} onChange={e => setMarketBuyType(e.target.value)} required>
+                <option value="WEAPON">⚔️ WEAPON</option>
+                <option value="HELMET">🪖 HELMET</option>
+                <option value="ARMOR">🛡️ ARMOR</option>
+                <option value="ARMS">🧤 ARMS</option>
+                <option value="LEG">👖 LEG</option>
+                <option value="BOOTS">🥾 BOOTS</option>
+              </Select>
+            </div>
+            <div>
+              <label className="text-[10px] text-muted-foreground font-black uppercase tracking-wide block mb-1">Kelangkaan</label>
+              <Select value={marketBuyRarity} onChange={e => setMarketBuyRarity(e.target.value)} required>
+                <option value="COMMON">COMMON</option>
+                <option value="RARE">RARE</option>
+                <option value="EPIC">EPIC</option>
+                <option value="LEGENDARY">LEGENDARY</option>
+              </Select>
+            </div>
+            <div className="col-span-2">
+              <label className="text-[10px] text-muted-foreground font-black uppercase tracking-wide block mb-1">Nama Peralatan</label>
+              <Select value={marketBuyName} onChange={e => setMarketBuyName(e.target.value)} required>
+                {((marketTemplates[marketBuyType]?.[marketBuyRarity]) || []).map(name => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <label className="text-[10px] text-muted-foreground font-black uppercase tracking-wide block mb-1">Harga Beli (Gold)</label>
+              <Input type="number" min="1" required placeholder="Contoh: 50" value={marketBuyPrice} onChange={e => setMarketBuyPrice(e.target.value)} className="h-8 text-xs" />
+            </div>
+            <div className="flex items-end">
+              <Button type="submit" variant="success" size="sm" className="w-full h-8 text-xs font-black">
+                Beli Item
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
 
-                  return (
-                    <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                      <td style={{ padding: '6px 8px', fontWeight: 600, color: '#e2e8f0' }}>{o.name}</td>
-                      <td style={{ padding: '6px 8px', color: rarityColor, fontWeight: 700 }}>{o.rarity}</td>
-                      <td style={{ padding: '6px 8px', textAlign: 'center' }}>
-                        <span style={{
-                          color: isBuy ? '#10b981' : '#ef4444', 
-                          fontWeight: 'bold', 
-                          background: isBuy ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', 
-                          padding: '2px 6px', 
-                          borderRadius: '4px', 
-                          fontSize: '0.7rem'
-                        }}>{o.order_type}</span>
-                      </td>
-                      <td style={{ padding: '6px 8px', textAlign: 'right', color: '#94a3b8' }}>{o.count}x</td>
-                      <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 'bold', color: isBuy ? '#10b981' : '#f59e0b' }}>{o.price} G</td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr><td colSpan={5} style={{ textAlign: 'center', color: '#64748b', padding: '10px' }}>Tidak ada antrean order saat ini.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {/* Order Book */}
+      <Card className="border-white/5">
+        <CardContent className="p-3">
+          <h4 className="text-xs font-black text-indigo-300/80 uppercase tracking-widest mb-2">
+            📊 Order Book Aktif
+          </h4>
+          <div className="max-h-[140px] overflow-y-auto rounded-lg border border-white/5 text-xs">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-black/30 border-b border-white/6 text-muted-foreground font-black">
+                  <th className="p-1.5 text-left">Item</th>
+                  <th className="p-1.5 text-left">Kelangkaan</th>
+                  <th className="p-1.5 text-center">Tipe</th>
+                  <th className="p-1.5 text-right">Qty</th>
+                  <th className="p-1.5 text-right">Harga</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orderBook.length > 0 ? (
+                  orderBook.map((o, idx) => {
+                    const isBuy = o.order_type === 'BUY';
+                    return (
+                      <tr key={idx} className="border-b border-white/3 hover:bg-white/2 transition-colors">
+                        <td className="p-1.5 font-semibold text-foreground">{o.name}</td>
+                        <td className="p-1.5">
+                          <Badge variant={RARITY_BADGE[o.rarity] || 'outline'} className="text-[9px] px-1 py-0">{o.rarity}</Badge>
+                        </td>
+                        <td className="p-1.5 text-center">
+                          <Badge variant={isBuy ? 'success' : 'destructive'} className="text-[9px] px-1.5 py-0">{o.order_type}</Badge>
+                        </td>
+                        <td className="p-1.5 text-right text-muted-foreground">{o.count}x</td>
+                        <td className={`p-1.5 text-right font-bold ${isBuy ? 'text-emerald-400' : 'text-amber-400'}`}>{o.price}G</td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr><td colSpan={5} className="text-center text-muted-foreground p-3">Tidak ada order aktif</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* My active orders */}
-      <div style={{ background: 'rgba(10, 10, 15, 0.5)', border: '1px solid rgba(255,255,255,0.04)', padding: '12px', borderRadius: '10px' }}>
-        <h4 style={{ margin: '0 0 8px 0', color: '#a5b4fc', fontSize: '0.85rem', textTransform: 'uppercase' }}>Antrean Aktif Saya</h4>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '120px', overflowY: 'auto' }}>
-          {myOrders.length > 0 ? (
-            myOrders.map(o => {
-              const isBuy = o.order_type === 'BUY';
-              let rarityColor = '#fff';
-              if (o.rarity === 'RARE') rarityColor = '#3b82f6';
-              else if (o.rarity === 'EPIC') rarityColor = '#a855f7';
-              else if (o.rarity === 'LEGENDARY') rarityColor = '#f59e0b';
-
-              return (
-                <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', padding: '8px 12px', borderRadius: '6px', fontSize: '0.75rem' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <div style={{ fontWeight: 600, color: '#f8fafc' }}>
-                      <span style={{
-                        color: isBuy ? '#10b981' : '#ef4444',
-                        fontWeight: 'bold',
-                        fontSize: '0.7rem',
-                        background: isBuy ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
-                        padding: '2px 5px',
-                        borderRadius: '3px'
-                      }}>{o.order_type}</span>
-                      <span style={{ color: rarityColor, marginLeft: '4px' }}>{o.item_name}</span>
+      {/* My Orders */}
+      <Card className="border-white/5">
+        <CardContent className="p-3">
+          <h4 className="text-xs font-black text-indigo-300/80 uppercase tracking-widest mb-2">
+            🗂️ Antrean Aktif Saya
+          </h4>
+          <div className="flex flex-col gap-1.5 max-h-[120px] overflow-y-auto">
+            {myOrders.length > 0 ? (
+              myOrders.map(o => {
+                const isBuy = o.order_type === 'BUY';
+                return (
+                  <div key={o.id} className="flex items-center justify-between bg-white/2 border border-white/5 rounded-lg px-3 py-1.5">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Badge variant={isBuy ? 'success' : 'destructive'} className="text-[9px] px-1.5 py-0 shrink-0">{o.order_type}</Badge>
+                      <Badge variant={RARITY_BADGE[o.rarity] || 'outline'} className="text-[9px] px-1.5 py-0 shrink-0">{o.rarity}</Badge>
+                      <span className="text-xs font-semibold text-foreground truncate">{o.item_name}</span>
                     </div>
-                    <div style={{ color: '#94a3b8', fontSize: '0.7rem' }}>Harga: <span style={{ fontWeight: 'bold', color: isBuy ? '#10b981' : '#f59e0b' }}>{o.price} G</span></div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className={`text-xs font-bold ${isBuy ? 'text-emerald-400' : 'text-amber-400'}`}>{o.price}G</span>
+                      <Button size="sm" variant="destructive" className="h-6 px-2 text-[10px] bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20" onClick={() => handleCancelOrder(o.id)}>
+                        Batal
+                      </Button>
+                    </div>
                   </div>
-                  <button className="btn-sell" style={{ backgroundColor: '#ef4444', padding: '4px 10px', fontSize: '0.7rem', borderRadius: '4px' }} onClick={() => handleCancelOrder(o.id)}>Batal</button>
-                </div>
-              );
-            })
-          ) : (
-            <div style={{ textAlign: 'center', color: '#64748b', padding: '10px' }}>Tidak ada antrean aktif.</div>
-          )}
-        </div>
-      </div>
+                );
+              })
+            ) : (
+              <div className="text-center text-muted-foreground text-xs py-3">Tidak ada antrean aktif.</div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -1,81 +1,74 @@
 'use client';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+
+const SKILL_LIST = [
+  { key: 'atk',       name: '⚔️ Attack',       desc: 'Menambah damage tiap hit (+2 per level)' },
+  { key: 'def',       name: '🛡️ Defence',       desc: 'Kurangi biaya hit (-1 G), naikkan max stamina (+10), regen +5%/lv' },
+  { key: 'eco',       name: '💰 Ekonomi',       desc: 'Naikkan batas Energi Kerja (+10) & regen +5%/lv' },
+  { key: 'agi',       name: '⚡ Agility',       desc: 'Durability equipment aman dari hit (+5%/lv)' },
+  { key: 'crit_rate', name: '🎯 Crit Rate',     desc: 'Peluang damage kritikal (+4%/lv)' },
+  { key: 'crit_dmg',  name: '💥 Crit Damage',   desc: 'Meningkatkan multiplier kritikal (+10%/lv)' }
+];
 
 export default function SkillsTab({ player, handleUpgradeSkill }) {
-  const skillsList = [
-    { key: 'atk', name: '⚔️ Attack', desc: 'Menambah damage tiap hit (+2 per level)' },
-    { key: 'def', name: '🛡️ Defence', desc: 'Kurangi biaya hit (-1 G), naikkan max stamina (+10), & regen stamina (+5% speed/level)' },
-    { key: 'eco', name: '💰 Ekonomi', desc: 'Meningkatkan batas Energi Kerja (+10) dan kecepatan regenerasinya (+5% speed per level)' },
-    { key: 'agi', name: '⚡ Agility', desc: 'Durability equipment aman dari hit (+5% per level)' },
-    { key: 'crit_rate', name: '🎯 Crit Rate', desc: 'Peluang menghasilkan damage kritikal (+4% per level)' },
-    { key: 'crit_dmg', name: '💥 Crit Damage', desc: 'Meningkatkan multiplier damage kritikal (+10% per level)' }
-  ];
+  const hasPoints = (player.skill_points || 0) >= 1;
 
   return (
-    <div className="tab-pane active-pane">
-      <div style={{
-        background: 'rgba(16, 185, 129, 0.05)',
-        border: '1px solid rgba(16, 185, 129, 0.15)',
-        borderRadius: '12px',
-        padding: '12px',
-        marginBottom: '15px',
-        textAlign: 'center'
-      }}>
-        <div style={{ fontSize: '0.75rem', color: '#a7f3d0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-          Poin Kemampuan Tersedia
-        </div>
-        <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#10b981', margin: '4px 0' }}>
-          {player.skill_points || 0}
-        </div>
-        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-          Gunakan poin untuk meningkatkan keahlian tempur & ekonomi
-        </div>
+    <div className="tab-pane active-pane flex flex-col gap-3">
+
+      {/* Skill Points Banner */}
+      <Card className="border-emerald-500/20 bg-emerald-500/5">
+        <CardContent className="p-3 text-center">
+          <div className="text-xs text-emerald-300/70 uppercase tracking-widest mb-1">
+            Poin Kemampuan Tersedia
+          </div>
+          <div className="text-3xl font-black text-emerald-400 leading-none mb-1">
+            {player.skill_points || 0}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Gunakan poin untuk meningkatkan keahlian tempur &amp; ekonomi
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quick Stats */}
+      <div className="flex justify-between text-xs font-bold text-slate-300 px-1">
+        <span>Level Panglima: <span className="text-white">{player.level || 1}</span></span>
+        <span>Emas: <span className="text-yellow-400">{player.gold} G</span></span>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '12px', fontWeight: 'bold' }}>
-        <span>Level Panglima: {player.level || 1}</span>
-        <span>Emas: <strong style={{ color: '#facc15' }}>{player.gold}</strong> G</span>
-      </div>
+      <Separator className="bg-white/5" />
 
-      {/* Upgrades items */}
-      <div className="skills-list" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {skillsList.map(s => {
+      {/* Skills List */}
+      <div className="flex flex-col gap-2">
+        {SKILL_LIST.map(s => {
           const currentLevel = player[s.key + '_level'] || 0;
           return (
-            <div 
-              className="skill-item" 
-              key={s.key}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '12px',
-                borderRadius: '10px',
-                background: 'rgba(255, 255, 255, 0.02)',
-                border: '1px solid rgba(255, 255, 255, 0.04)'
-              }}
-            >
-              <div style={{ flex: 1, paddingRight: '10px' }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#f8fafc' }}>
-                  {s.name} <span style={{ color: '#10b981' }}>(Lv. {currentLevel})</span>
+            <Card key={s.key} className="border-white/5 hover:border-indigo-500/20 transition-colors">
+              <CardContent className="p-3 flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm font-bold text-foreground">{s.name}</span>
+                    <Badge variant="common" className="text-[10px] px-1.5 py-0">
+                      Lv. {currentLevel}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-snug">{s.desc}</p>
                 </div>
-                <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '4px 0 0 0', lineHeight: '1.3' }}>{s.desc}</p>
-              </div>
-              <button 
-                className="rpg-btn" 
-                onClick={() => handleUpgradeSkill(s.key)}
-                disabled={(player.skill_points || 0) < 1}
-                style={{ 
-                  padding: '6px 12px', 
-                  fontSize: '0.75rem',
-                  opacity: (player.skill_points || 0) < 1 ? 0.4 : 1, 
-                  cursor: (player.skill_points || 0) < 1 ? 'not-allowed' : 'pointer',
-                  background: (player.skill_points || 0) < 1 ? '#3f3f46' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                  boxShadow: (player.skill_points || 0) < 1 ? 'none' : '0 4px 12px rgba(16, 185, 129, 0.25)'
-                }}
-              >
-                Latih
-              </button>
-            </div>
+                <Button
+                  size="sm"
+                  variant="success"
+                  onClick={() => handleUpgradeSkill(s.key)}
+                  disabled={!hasPoints}
+                  className="shrink-0 text-xs px-3"
+                >
+                  Latih
+                </Button>
+              </CardContent>
+            </Card>
           );
         })}
       </div>
