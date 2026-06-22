@@ -37,8 +37,8 @@ export default function Sidebar({
   handleUpgradeSkill, handleEquipItem, handleUnequipItem, handleSellItem,
   chestRates, ratesSum, handleOpenChest, handleBuyShopItem, handleRateChange, submitChestRates,
   marketBuyType, setMarketBuyType, marketBuyRarity, setMarketBuyRarity, marketBuyName, setMarketBuyName,
-  marketBuyPrice, setMarketBuyPrice, marketTemplates, orderBook, myOrders, handlePlaceBuyOrder, handleCancelOrder,
-  recipes, handleCraftItem, kingdomMembers, handleUpdateRole, isFetchingMembers
+  marketBuyPrice, setMarketBuyPrice, marketBuyQty, setMarketBuyQty, marketTemplates, orderBook, myOrders, handlePlaceBuyOrder, handleCancelOrder,
+  recipes, handleCraftItem, handleSellResource, kingdomMembers, handleUpdateRole, isFetchingMembers
 }) {
   const router = useRouter();
   const [inventorySubTab, setInventorySubTab] = useState('inv');
@@ -206,7 +206,7 @@ export default function Sidebar({
               <div className="flex-1">
                 {inventorySubTab === 'inv' && <InventoryTab player={player} equippedAtk={equippedAtk} equippedDef={equippedDef} equippedAgi={equippedAgi} equippedCrit={equippedCrit} equippedSummary={equippedSummary} handleEquipItem={handleEquipItem} handleUnequipItem={handleUnequipItem} handleSellItem={handleSellItem} />}
                 {inventorySubTab === 'shop' && <ShopTab player={player} chestRates={chestRates} ratesSum={ratesSum} handleOpenChest={handleOpenChest} handleBuyShopItem={handleBuyShopItem} handleRateChange={handleRateChange} submitChestRates={submitChestRates} />}
-                {inventorySubTab === 'craft' && <CraftingTab player={player} recipes={recipes} handleCraftItem={handleCraftItem} />}
+                {inventorySubTab === 'craft' && <CraftingTab player={player} recipes={recipes} handleCraftItem={handleCraftItem} handleSellResource={handleSellResource} />}
               </div>
             </div>
           )}
@@ -217,6 +217,7 @@ export default function Sidebar({
             <MarketTab 
               marketBuyType={marketBuyType} setMarketBuyType={setMarketBuyType} marketBuyRarity={marketBuyRarity} setMarketBuyRarity={setMarketBuyRarity}
               marketBuyName={marketBuyName} setMarketBuyName={setMarketBuyName} marketBuyPrice={marketBuyPrice} setMarketBuyPrice={setMarketBuyPrice}
+              marketBuyQty={marketBuyQty} setMarketBuyQty={setMarketBuyQty}
               marketTemplates={marketTemplates} orderBook={orderBook} myOrders={myOrders} handlePlaceBuyOrder={handlePlaceBuyOrder} handleCancelOrder={handleCancelOrder}
             />
           )}

@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 const RARITY_BADGE = { COMMON: 'common', RARE: 'rare', EPIC: 'epic', LEGENDARY: 'legendary' };
 const TYPE_EMOJI   = { WEAPON: '⚔️', ARMOR: '🛡️', HELMET: '🪖', BOOTS: '🥾', ARMS: '🧤', LEG: '👖' };
 
-export default function CraftingTab({ player, recipes, handleCraftItem }) {
+export default function CraftingTab({ player, recipes, handleCraftItem, handleSellResource }) {
   return (
     <div className="tab-pane active-pane flex flex-col gap-3">
 
@@ -14,14 +14,17 @@ export default function CraftingTab({ player, recipes, handleCraftItem }) {
       <Card className="border-white/5">
         <CardContent className="p-3 grid grid-cols-3 gap-3 text-center">
           {[
-            { emoji: '🪵', label: 'Kayu',   val: player.wood   || 0 },
-            { emoji: '⚙️', label: 'Besi',   val: player.iron   || 0 },
-            { emoji: '🌶️', label: 'Rempah', val: player.spices || 0 }
+            { id: 'wood',   emoji: '🪵', label: 'Kayu',   val: player.wood   || 0 },
+            { id: 'iron',   emoji: '⚙️', label: 'Besi',   val: player.iron   || 0 },
+            { id: 'spices', emoji: '🌶️', label: 'Rempah', val: player.spices || 0 }
           ].map((m, i) => (
-            <div key={i} className={i === 1 ? 'border-x border-white/6 px-2' : ''}>
+            <div key={i} className={`flex flex-col ${i === 1 ? 'border-x border-white/6 px-2' : ''}`}>
               <div className="text-2xl mb-1">{m.emoji}</div>
               <div className="text-[10px] text-muted-foreground font-black uppercase tracking-wide mb-0.5">{m.label}</div>
-              <div className="text-lg font-black text-foreground">{m.val}</div>
+              <div className="text-lg font-black text-foreground mb-2">{m.val}</div>
+              <Button size="sm" variant="outline" className="text-[10px] h-6 border-indigo-500/40 text-indigo-300 mt-auto" onClick={() => handleSellResource && handleSellResource(m.id, m.val)} disabled={m.val <= 0}>
+                Jual
+              </Button>
             </div>
           ))}
         </CardContent>

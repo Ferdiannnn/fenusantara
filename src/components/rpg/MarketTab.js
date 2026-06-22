@@ -13,6 +13,7 @@ export default function MarketTab({
   marketBuyRarity, setMarketBuyRarity,
   marketBuyName, setMarketBuyName,
   marketBuyPrice, setMarketBuyPrice,
+  marketBuyQty, setMarketBuyQty,
   marketTemplates,
   orderBook,
   myOrders,
@@ -38,11 +39,12 @@ export default function MarketTab({
                 <option value="ARMS">🧤 ARMS</option>
                 <option value="LEG">👖 LEG</option>
                 <option value="BOOTS">🥾 BOOTS</option>
+                <option value="RESOURCE">📦 RESOURCE</option>
               </Select>
             </div>
             <div>
               <label className="text-[10px] text-muted-foreground font-black uppercase tracking-wide block mb-1">Kelangkaan</label>
-              <Select value={marketBuyRarity} onChange={e => setMarketBuyRarity(e.target.value)} required>
+              <Select value={marketBuyRarity} onChange={e => setMarketBuyRarity(e.target.value)} required disabled={marketBuyType === 'RESOURCE'}>
                 <option value="COMMON">COMMON</option>
                 <option value="RARE">RARE</option>
                 <option value="EPIC">EPIC</option>
@@ -50,18 +52,31 @@ export default function MarketTab({
               </Select>
             </div>
             <div className="col-span-2">
-              <label className="text-[10px] text-muted-foreground font-black uppercase tracking-wide block mb-1">Nama Peralatan</label>
+              <label className="text-[10px] text-muted-foreground font-black uppercase tracking-wide block mb-1">Nama Peralatan / Resource</label>
               <Select value={marketBuyName} onChange={e => setMarketBuyName(e.target.value)} required>
-                {((marketTemplates[marketBuyType]?.[marketBuyRarity]) || []).map(name => (
-                  <option key={name} value={name}>{name}</option>
-                ))}
+                {marketBuyType === 'RESOURCE' ? (
+                  <>
+                    <option value="">Pilih Resource...</option>
+                    <option value="wood">Kayu (Wood)</option>
+                    <option value="iron">Besi (Iron)</option>
+                    <option value="spices">Rempah (Spices)</option>
+                  </>
+                ) : (
+                  ((marketTemplates[marketBuyType]?.[marketBuyRarity]) || []).map(name => (
+                    <option key={name} value={name}>{name}</option>
+                  ))
+                )}
               </Select>
             </div>
             <div>
-              <label className="text-[10px] text-muted-foreground font-black uppercase tracking-wide block mb-1">Harga Beli (Gold)</label>
+              <label className="text-[10px] text-muted-foreground font-black uppercase tracking-wide block mb-1">Harga (Gold/Total)</label>
               <Input type="number" min="1" required placeholder="Contoh: 50" value={marketBuyPrice} onChange={e => setMarketBuyPrice(e.target.value)} className="h-8 text-xs" />
             </div>
-            <div className="flex items-end">
+            <div>
+              <label className="text-[10px] text-muted-foreground font-black uppercase tracking-wide block mb-1">Kuantitas</label>
+              <Input type="number" min="1" required placeholder="1" value={marketBuyQty} onChange={e => setMarketBuyQty(e.target.value)} className="h-8 text-xs" />
+            </div>
+            <div className="col-span-2 flex items-end">
               <Button type="submit" variant="success" size="sm" className="w-full h-8 text-xs font-black">
                 Beli Item
               </Button>

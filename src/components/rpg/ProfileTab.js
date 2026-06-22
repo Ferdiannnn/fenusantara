@@ -3,10 +3,10 @@ import { useState, useEffect } from 'react';
 
 /**
  * Calculate seconds until next +1 regen tick.
- * Formula mirrors backend: intervalSeconds = 2100 * 0.95^(level-1)
+ * Formula mirrors backend: intervalSeconds = 600 * 0.95^(level-1)
  */
 function calcRegenCountdown(lastRegenISO, level) {
-  const intervalSeconds = Math.floor(2100 * Math.pow(0.95, (level || 1) - 1));
+  const intervalSeconds = Math.floor(600 * Math.pow(0.95, (level || 1) - 1));
   const lastRegen = new Date(lastRegenISO || Date.now());
   const secondsElapsed = Math.floor((Date.now() - lastRegen.getTime()) / 1000);
   const remainderSeconds = secondsElapsed % intervalSeconds;

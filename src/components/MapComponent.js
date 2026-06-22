@@ -42,6 +42,7 @@ export default function MapComponent() {
   const [marketBuyRarity, setMarketBuyRarity] = useState('COMMON');
   const [marketBuyName, setMarketBuyName] = useState('');
   const [marketBuyPrice, setMarketBuyPrice] = useState('');
+  const [marketBuyQty, setMarketBuyQty] = useState(1);
   const [orderBook, setOrderBook] = useState([]);
   const [myOrders, setMyOrders] = useState([]);
   
@@ -804,6 +805,49 @@ export default function MapComponent() {
     }
   };
 
+  // Sell Resource to Market
+  const handleSellResource = async (resourceName, maxAmount) => {
+    if (!player) return;
+    const qtyInput = prompt(`Masukkan jumlah ${resourceName} yang ingin dijual (Maksimal: ${maxAmount}):`, 1);
+    if (qtyInput === null) return;
+    const qty = parseInt(qtyInput);
+    if (isNaN(qty) || qty <= 0 || qty > maxAmount) {
+      alert("Kuantitas tidak valid.");
+      return;
+    }
+    const priceInput = prompt(`Masukkan harga per unit ${resourceName} (dalam Gold):`, 1);
+    if (priceInput === null) return;
+    const price = parseInt(priceInput);
+    if (isNaN(price) || price <= 0) {
+      alert("Harga jual harus berupa angka yang lebih besar dari 0 Gold.");
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/game/market/place_sell_order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          player_id: player.id,
+          item_name: resourceName,
+          item_type: 'RESOURCE',
+          price: price,
+          quantity: qty
+        })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        alert(data.message);
+        refreshPlayerStats();
+        loadMarketData();
+      } else {
+        alert(data.message);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   // Purchase basic gear from shop
   const handleBuyShopItem = async (itemKey) => {
     if (!player) return;
@@ -892,7 +936,8 @@ export default function MapComponent() {
           item_name: marketBuyName,
           rarity: marketBuyRarity,
           item_type: marketBuyType,
-          price: price
+          price: price,
+          quantity: marketBuyQty
         })
       });
       const data = await res.json();
@@ -1070,6 +1115,7 @@ export default function MapComponent() {
         handleEquipItem={handleEquipItem}
         handleUnequipItem={handleUnequipItem}
         handleSellItem={handleSellItem}
+        handleSellResource={handleSellResource}
         
         // Shop Tab handlers
         chestRates={chestRates}
@@ -1088,6 +1134,8 @@ export default function MapComponent() {
         setMarketBuyName={setMarketBuyName}
         marketBuyPrice={marketBuyPrice}
         setMarketBuyPrice={setMarketBuyPrice}
+        marketBuyQty={marketBuyQty}
+        setMarketBuyQty={setMarketBuyQty}
         marketTemplates={marketTemplates}
         orderBook={orderBook}
         myOrders={myOrders}
