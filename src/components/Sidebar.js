@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { User, Zap, Backpack, TrendingUp, Swords, Map as MapIcon, LogOut, Info, Users } from 'lucide-react';
@@ -16,6 +16,7 @@ import ShopTab from './rpg/ShopTab';
 import MarketTab from './rpg/MarketTab';
 import CraftingTab from './rpg/CraftingTab';
 import KingdomTab from './rpg/KingdomTab';
+import BattleRoundPanel from './BattleRoundPanel';
 
 const SIDEBAR_MENUS = [
   { id: 'profile',   icon: User,       label: 'Profil' },
@@ -30,6 +31,7 @@ const SIDEBAR_MENUS = [
 export default function Sidebar({
   player, selectedTerritory, formatRemainingTime,
   handleDeclareWar, handleBattleAction, handleHarvest, battleLogs,
+  battleStatus, startBattleStatusPoll, stopBattleStatusPoll,
   sidebarTab, setSidebarTab, territories = [], focusTerritory,
   equippedAtk, equippedDef, equippedAgi, equippedCrit, equippedSummary,
   handleUpgradeSkill, handleEquipItem, handleUnequipItem, handleSellItem,
@@ -75,6 +77,16 @@ export default function Sidebar({
       if (isOwnedByUs) isHarvestable = true;
     }
   }
+
+  // Auto-start/stop battle status polling when a territory with battle is selected
+  useEffect(() => {
+    if (ongoingBattle && selectedTerritory?.code && startBattleStatusPoll) {
+      startBattleStatusPoll(selectedTerritory.code);
+    } else if (!ongoingBattle && stopBattleStatusPoll) {
+      stopBattleStatusPoll();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ongoingBattle?.id, selectedTerritory?.code]);
 
   const handleLogout = () => {
     localStorage.removeItem('player');
@@ -210,7 +222,6 @@ export default function Sidebar({
           )}
           {sidebarTab === 'market' && !player && <EmptyState msg="Silakan login untuk ikut bertransaksi di bursa peralatan." />}
 
-          {/* BATTLES */}
           {sidebarTab === 'battles' && (
             <div className="flex flex-col gap-3">
               <h4 className="text-xs font-black text-primary/80 uppercase tracking-widest px-1">
@@ -221,15 +232,15 @@ export default function Sidebar({
                   const battle = t.battles[0];
                   const attackerName = battle.attacker_kingdom?.name || 'Kerajaan Lain';
                   const defenderName = t.kingdom?.name || 'Wilayah Netral';
-                  const hpVal = t.troops_count || 0;
-                  const progressPct = Math.max(0, Math.min(100, ((100 - hpVal) / 100) * 100));
+                  const atkRounds = battle.attacker_rounds_won ?? 0;
+                  const defRounds = battle.defender_rounds_won ?? 0;
 
                   return (
                     <Card key={t.code} className="border-red-500/20 bg-red-500/5">
                       <CardContent className="p-3">
-                        <div className="flex justify-between items-start mb-3">
+                        <div className="flex justify-between items-start mb-2">
                           <div>
-                            <div className="font-bold text-sm text-foreground flex items-center gap-1.5 mb-1">
+                            <div className="font-bold text-sm text-foreground flex items-center gap-1.5 mb-0.5">
                               <Swords className="w-4 h-4 text-red-400" />
                               {t.name}
                             </div>
@@ -243,12 +254,29 @@ export default function Sidebar({
                             Pantau
                           </Button>
                         </div>
-                        <div className="flex justify-between text-[10px] font-black text-red-400 mb-1">
-                          <span>Progress Penaklukan</span>
-                          <span>{Math.round(progressPct)}%</span>
-                        </div>
-                        <div className="h-1.5 bg-red-950/50 rounded-full overflow-hidden">
-                          <div className="h-full bg-red-500 transition-all" style={{ width: `${progressPct}%` }} />
+                        {/* Round win scoreboard */}
+                        <div className="flex items-center justify-between bg-black/30 rounded-lg px-3 py-2 border border-white/5">
+                          <div className="flex items-center gap-1.5">
+                            {[0, 1].map(i => (
+                              <div key={i} style={{
+                                width: 10, height: 10, borderRadius: '50%',
+                                background: atkRounds > i ? '#ef4444' : '#1f1515',
+                                border: `1.5px solid ${atkRounds > i ? '#f87171' : '#333'}`
+                              }} />
+                            ))}
+                            <span className="text-[10px] font-bold text-red-400">{attackerName.slice(0, 10)}</span>
+                          </div>
+                          <span className="text-[9px] font-black text-muted-foreground">RONDE</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-blue-400">{defenderName.slice(0, 10)}</span>
+                            {[0, 1].map(i => (
+                              <div key={i} style={{
+                                width: 10, height: 10, borderRadius: '50%',
+                                background: defRounds > i ? '#3b82f6' : '#0f1520',
+                                border: `1.5px solid ${defRounds > i ? '#60a5fa' : '#333'}`
+                              }} />
+                            ))}
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -274,6 +302,7 @@ export default function Sidebar({
                         {selectedTerritory.parent}{selectedTerritory.province}
                       </div>
                       
+                      {/* Ownership info */}
                       <div className="flex justify-between items-center bg-black/20 rounded-lg p-3 border border-white/5 mb-4">
                         <div className="flex flex-col">
                           <span className="text-[10px] text-muted-foreground font-bold uppercase mb-0.5">Kepemilikan</span>
@@ -282,20 +311,30 @@ export default function Sidebar({
                           </span>
                         </div>
                         <div className="flex flex-col items-end">
-                          <span className="text-[10px] text-muted-foreground font-bold uppercase mb-0.5">HP Wilayah</span>
-                          <span className="text-sm font-black text-foreground">{troopsCount} <span className="text-muted-foreground">/ 100</span></span>
+                          <span className="text-[10px] text-muted-foreground font-bold uppercase mb-0.5">Status</span>
+                          <span className="text-sm font-black text-foreground">
+                            {ongoingBattle ? <span className="text-red-400 animate-pulse">⚔️ PERANG</span> : '🕊️ Damai'}
+                          </span>
                         </div>
                       </div>
 
+                      {/* Battle Round Panel — shows when there's an active battle */}
                       {ongoingBattle && (
-                        <div className="mb-5">
-                          <div className="flex justify-between text-[10px] font-black text-red-400 mb-1.5">
-                            <span>Progress Penaklukan</span>
-                            <span>{Math.round(Math.max(0, Math.min(100, ((100 - troopsCount) / 100) * 100)))}%</span>
-                          </div>
-                          <div className="h-2 bg-red-950/50 rounded-full overflow-hidden border border-red-500/20 shadow-[0_0_10px_rgba(239,68,68,0.1)]">
-                            <div className="h-full bg-gradient-to-r from-red-600 to-red-400 transition-all" style={{ width: `${Math.max(0, Math.min(100, ((100 - troopsCount) / 100) * 100))}%` }} />
-                          </div>
+                        <div className="mb-4">
+                          <BattleRoundPanel
+                            battleStatus={battleStatus}
+                            attackerName={ongoingBattle.attacker_kingdom?.name || 'Penyerang'}
+                            defenderName={selectedTerritory.currentTData?.kingdom?.name || 'Netral'}
+                            attackerColor={ongoingBattle.attacker_kingdom?.color_hex}
+                            defenderColor={selectedTerritory.currentTData?.kingdom?.color_hex}
+                            territoryCode={selectedTerritory.code}
+                            onTickProcessed={(tickData) => {
+                              // Setelah tick diproses, update battleStatus dari data yang dikembalikan
+                              if (tickData?.battleStatus) {
+                                if (startBattleStatusPoll) startBattleStatusPoll(selectedTerritory.code);
+                              }
+                            }}
+                          />
                         </div>
                       )}
 

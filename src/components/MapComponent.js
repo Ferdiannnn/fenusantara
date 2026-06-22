@@ -6,6 +6,7 @@ import L from 'leaflet';
 import Sidebar from './Sidebar';
 import ChestLootModal from './overlays/ChestLootModal';
 import ChestOpeningOverlay from './overlays/ChestOpeningOverlay';
+import BattleRoundPanel from './BattleRoundPanel';
 
 const indonesiaBounds = [
   [-11.0, 95.0], // Barat Daya
@@ -19,6 +20,8 @@ export default function MapComponent() {
   const [sidebarTab, setSidebarTab] = useState('profile');
   const [tick, setTick] = useState(0);
   const [battleLogs, setBattleLogs] = useState([]);
+  const [battleStatus, setBattleStatus] = useState(null);
+  const battleStatusPollRef = useRef(null);
   
   // Chest Loot Modal State
   const [chestLootOpen, setChestLootOpen] = useState(false);
@@ -545,6 +548,24 @@ export default function MapComponent() {
     }
   };
 
+  // Poll battle status for active territory (every 10s)
+  const startBattleStatusPoll = useCallback((territoryCode) => {
+    if (battleStatusPollRef.current) clearInterval(battleStatusPollRef.current);
+    const poll = () => {
+      fetch(`/api/game/battle_status/${territoryCode}`)
+        .then(r => r.json())
+        .then(r => { if (r.status === 'success') setBattleStatus(r.data); })
+        .catch(() => {});
+    };
+    poll();
+    battleStatusPollRef.current = setInterval(poll, 10000);
+  }, []);
+
+  const stopBattleStatusPoll = useCallback(() => {
+    if (battleStatusPollRef.current) { clearInterval(battleStatusPollRef.current); battleStatusPollRef.current = null; }
+    setBattleStatus(null);
+  }, []);
+
   // Battle Help Attack / Defend handler
   const handleBattleAction = async (action) => {
     if (!player || !player.id) return;
@@ -572,48 +593,76 @@ export default function MapComponent() {
           localStorage.setItem('player', JSON.stringify(data.player));
         }
 
+        // Update battle status from response — langsung refresh damage tanpa tunggu polling
+        if (data.roundNumber) {
+          setBattleStatus(prev => ({
+            ...prev,
+            active: true,
+            attacker_rounds_won: data.attacker_rounds_won ?? prev?.attacker_rounds_won ?? 0,
+            defender_rounds_won: data.defender_rounds_won ?? prev?.defender_rounds_won ?? 0,
+            activeRound: prev?.activeRound ? {
+              ...prev.activeRound,
+              attacker_points: data.attacker_points,
+              defender_points: data.defender_points,
+              round_number: data.roundNumber,
+              // Selalu pakai nilai aktual dari backend (bisa 0 setelah tick, tapi panel akan fallback ke lastTick)
+              attacker_dmg_since_tick: data.attacker_dmg_since_tick ?? prev.activeRound.attacker_dmg_since_tick ?? 0,
+              defender_dmg_since_tick: data.defender_dmg_since_tick ?? prev.activeRound.defender_dmg_since_tick ?? 0,
+              // Tambahkan tick baru ke feed jika tick terjadi
+              ticks: data.tick_triggered && prev.activeRound.ticks
+                ? [{
+                    id: Date.now(),
+                    tick_number: (prev.activeRound.ticks[0]?.tick_number ?? 0) + 1,
+                    attacker_dmg: data.attacker_dmg_since_tick ?? 0,
+                    defender_dmg: data.defender_dmg_since_tick ?? 0,
+                    attacker_pts: data.tick_attacker_pts ?? 0,
+                    defender_pts: data.tick_defender_pts ?? 0,
+                  }, ...prev.activeRound.ticks].slice(0, 5)
+                : prev.activeRound.ticks
+            } : null
+          }));
+        }
+
         // Add log entry
         const now = new Date();
         const timeStr = now.toTimeString().split(' ')[0];
         let logText = `[${timeStr}] `;
         if (action === 'help_attack') {
           if (data.isCrit) logText += `💥 CRIT! `;
-          logText += `Serang: -${data.damage} HP`;
+          logText += `Serang: ${data.damage} dmg`;
         } else {
-          logText += `Bertahan: +${data.heal} HP`;
+          logText += `Bertahan: ${data.heal} def`;
         }
+
+        // Show current round points
+        logText += ` | ⚔️${data.attacker_points ?? 0}pt 🛡️${data.defender_points ?? 0}pt`;
 
         if (data.agiTriggered) {
-          logText += ` (⚡ AGI Aktif)`;
+          logText += ` (⚡AGI)`;
         } else if (data.durabilityLostItem) {
-          logText += ` (⚠️ [${data.durabilityLostItem}] -5 Dur)`;
+          logText += ` (⚠️${data.durabilityLostItem} -5Dur)`;
         }
 
-        logText += ` | 💰 ${data.goldChange >= 0 ? '+' : ''}${data.goldChange}G`;
-        logText += ` | ⚡ -${data.staminaCost}`;
-        logText += ` | ⭐ +${data.expGained}XP`;
+        logText += ` | 💰${data.goldChange >= 0 ? '+' : ''}${data.goldChange}G`;
+        logText += ` | ⭐+${data.expGained}XP`;
 
-        if (data.leveledUp) {
-          logText += ` | 🎉 LEVEL UP! Level ${data.newLevel}`;
+        if (data.leveledUp) logText += ` | 🎉LEVEL UP Lv.${data.newLevel}`;
+
+        // Tick event log
+        if (data.tick_triggered) {
+          const winner = data.tick_winner === 'attacker' ? '⚔️ SERANG' : data.tick_winner === 'defender' ? '🛡️ TAHAN' : '🤝 SERI';
+          logText += ` | 🔔TICK: ${winner} (+${data.tick_attacker_pts}⚔️ / +${data.tick_defender_pts}🛡️)`;
+        }
+        if (data.round_winner) {
+          logText += ` | 🏁RONDE ${data.roundNumber} → ${data.round_winner === 'ATTACKER' ? '⚔️ MENANG' : '🛡️ MENANG'}`;
         }
 
         setBattleLogs(prev => [...prev, logText]);
 
-        // If finished battle
-        if (data.conquered || data.defended) {
+        // If battle ended, refresh territory data and stop polling
+        if (data.battle_result?.status === 'ATTACKER_WON' || data.battle_result?.status === 'DEFENDER_WON') {
+          stopBattleStatusPoll();
           setTimeout(() => fetchTerritories(code), 800);
-        } else {
-          // Update map locally
-          if (territoriesDbRef.current[code]) {
-            territoriesDbRef.current[code].troops_count = data.hp;
-          }
-          setSelectedTerritory(prev => ({
-            ...prev,
-            currentTData: {
-              ...prev.currentTData,
-              troops_count: data.hp
-            }
-          }));
         }
       } else {
         alert(data.message);
@@ -999,6 +1048,9 @@ export default function MapComponent() {
         handleBattleAction={handleBattleAction}
         handleHarvest={handleHarvest}
         battleLogs={battleLogs}
+        battleStatus={battleStatus}
+        startBattleStatusPoll={startBattleStatusPoll}
+        stopBattleStatusPoll={stopBattleStatusPoll}
         
         // Navigation States
         sidebarTab={sidebarTab}
